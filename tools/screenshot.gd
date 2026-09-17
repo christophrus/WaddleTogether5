@@ -31,12 +31,12 @@ func _ready() -> void:
 		"brood":
 			# Close-up of mother and brood at the nest.
 			# Camera looks +Z from behind the mother, so the brood goes *ahead* of her.
-			park.mother.teleport(park.nest.global_position + Vector3(0.0, 0.6, -1.2))
+			park.mother.teleport(park.nest.global_position + Vector3(0.0, 0.6, -2.6))
 			park.mother.spring_arm.spring_length = 2.4
 			park.mother.spring_arm.rotation_degrees.x = -30.0
 			var i := 0
 			for d in park.ducklings():
-				d.teleport(park.nest.global_position + Vector3(-0.6 + 0.6 * i, 0.4, 0.2 + 0.3 * (i % 2)))
+				d.teleport(park.nest.global_position + Vector3(-0.6 + 0.6 * i, 0.4, -1.4 - 0.3 * (i % 2)))
 				d.follow.speed = 0.0
 				i += 1
 		"pond": park.mother.teleport(park.POND_CENTER + Vector3(0, 0.6, 2.0))

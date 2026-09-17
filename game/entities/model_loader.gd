@@ -45,10 +45,24 @@ func _fix_materials(node: Node, tint: Color) -> void:
 				fixed.vertex_color_is_srgb = true
 				fixed.metallic = 0.0
 				fixed.roughness = 1.0
+				fixed.set_meta("base_albedo", fixed.albedo_color)
 				fixed.albedo_color = fixed.albedo_color * tint
 				mi.set_surface_override_material(s, fixed)
 	for c in node.get_children():
 		_fix_materials(c, tint)
+
+## Re-tint a mounted model (growth stages, plumage). Multiplies the *base* albedo so
+## repeated calls do not compound. Values above 1 brighten dark vertex colours.
+static func apply_tint(root: Node, tint: Color) -> void:
+	if root is MeshInstance3D:
+		var mi: MeshInstance3D = root
+		if mi.mesh != null:
+			for s in mi.mesh.get_surface_count():
+				var m := mi.get_surface_override_material(s)
+				if m is StandardMaterial3D and m.has_meta("base_albedo"):
+					m.albedo_color = m.get_meta("base_albedo") * tint
+	for c in root.get_children():
+		apply_tint(c, tint)
 
 func _find_animation_player(node: Node) -> AnimationPlayer:
 	if node is AnimationPlayer:

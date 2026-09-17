@@ -18,7 +18,6 @@ var brood_progress_material: ShaderMaterial
 @onready var _keepsakes_root: Node3D = $Keepsakes
 
 var _park: Node3D
-var _ring_meshes: Array[MeshInstance3D] = []
 var _egg_nodes: Dictionary = {}   # egg id -> MeshInstance3D
 var _progress_mats: Dictionary = {}  # egg id -> ShaderMaterial (the one really rendered)
 var _rng := RandomNumberGenerator.new()
@@ -204,39 +203,73 @@ func _add_keepsake_visual(k: Dictionary) -> void:
 
 # --- Visual --------------------------------------------------------------------
 
+## Sized to a 0.73 m duck: a real nest is about one duck across. Built in three
+## visible stages: a trampled patch with loose twigs, a woven ring, a lined bowl.
 func _build_visual() -> void:
-	# Sized to a 0.73 m duck: a real nest is about one duck across.
-	var base := CylinderMesh.new()
-	base.top_radius = 0.7
-	base.bottom_radius = 0.78
-	base.height = 0.1
-	var b := MeshInstance3D.new()
-	b.mesh = base
-	var bm := StandardMaterial3D.new()
-	bm.albedo_color = Color(0.45, 0.36, 0.22)
-	bm.roughness = 1.0
-	b.material_override = bm
-	b.position.y = 0.06
-	_visual.add_child(b)
+	var patch := CylinderMesh.new()
+	patch.top_radius = 0.62
+	patch.bottom_radius = 0.62
+	patch.height = 0.03
+	_part(_visual, patch, Color(0.40, 0.33, 0.20), Vector3(0, 0.015, 0), 1.0)
+	var stage_roots: Array[Node3D] = []
 	for i in STAGES:
-		var ring := TorusMesh.new()
-		ring.inner_radius = 0.42 - i * 0.05
-		ring.outer_radius = 0.66 - i * 0.03
-		var mi := MeshInstance3D.new()
-		mi.mesh = ring
-		var m := StandardMaterial3D.new()
-		m.albedo_color = Color(0.72, 0.6, 0.35).darkened(i * 0.08)
-		m.roughness = 1.0
-		mi.material_override = m
-		mi.position.y = 0.12 + i * 0.1
-		mi.visible = false
-		_visual.add_child(mi)
-		_ring_meshes.append(mi)
+		var root := Node3D.new()
+		root.visible = false
+		_visual.add_child(root)
+		stage_roots.append(root)
+	# Stage 1: loose twigs dropped on the patch.
+	for i in 10:
+		_twig(stage_roots[0], _rng.randf_range(0.1, 0.55), 0.02, false, 0.0)
+	# Stage 2: a woven ring.
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.34
+	ring.outer_radius = 0.58
+	var r1 := _part(stage_roots[1], ring, Color(0.66, 0.53, 0.30), Vector3(0, 0.07, 0), 1.0)
+	r1.scale = Vector3(1.0, 0.45, 1.0)
+	for i in 16:
+		_twig(stage_roots[1], 0.47, 0.11, true, _rng.randf_range(-0.25, 0.25))
+	# Stage 3: raised rim and a soft down lining inside.
+	var rim := TorusMesh.new()
+	rim.inner_radius = 0.3
+	rim.outer_radius = 0.52
+	var r2 := _part(stage_roots[2], rim, Color(0.6, 0.47, 0.27), Vector3(0, 0.15, 0), 1.0)
+	r2.scale = Vector3(1.0, 0.45, 1.0)
+	for i in 14:
+		_twig(stage_roots[2], 0.42, 0.2, true, _rng.randf_range(-0.3, 0.3))
+	var lining := CylinderMesh.new()
+	lining.top_radius = 0.32
+	lining.bottom_radius = 0.28
+	lining.height = 0.06
+	_part(stage_roots[2], lining, Color(0.86, 0.8, 0.66), Vector3(0, 0.09, 0), 1.0)
+	_stage_roots = stage_roots
+
+var _stage_roots: Array[Node3D] = []
+
+## A twig at a random angle `a` around the centre. `tangential` lays it along the
+## rim (woven look); otherwise it lies at a random yaw (dropped look).
+func _twig(parent: Node3D, radius: float, y: float, tangential: bool, tilt: float) -> void:
+	var box := BoxMesh.new()
+	box.size = Vector3(_rng.randf_range(0.25, 0.42), 0.025, 0.03)
+	var a := _rng.randf() * TAU
+	var mi := _part(parent, box, Color(0.55, 0.42, 0.24).lightened(_rng.randf_range(-0.1, 0.2)), Vector3(cos(a) * radius, y, sin(a) * radius), 1.0)
+	var yaw := (-a + PI / 2.0 + _rng.randf_range(-0.35, 0.35)) if tangential else _rng.randf() * TAU
+	mi.rotation = Vector3(tilt, yaw, 0.0)
+
+func _part(parent: Node3D, mesh: Mesh, color: Color, pos: Vector3, roughness: float) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = roughness
+	mi.material_override = m
+	mi.position = pos
+	parent.add_child(mi)
+	return mi
 
 func _refresh_visual() -> void:
 	var stage := int(GameState.nest["stage"])
-	for i in _ring_meshes.size():
-		_ring_meshes[i].visible = i < stage
+	for i in _stage_roots.size():
+		_stage_roots[i].visible = i < stage
 
 func _add_egg_visual(id: int) -> void:
 	var idx := _egg_nodes.size()

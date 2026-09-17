@@ -7,7 +7,7 @@ extends CharacterBody3D
 ## as if it were nothing; one that has never seen the water stops at the shore and
 ## peeps after its swimming mother. That is the whole display (rule 3.1).
 
-enum State { NEST, FOLLOW, SLEEP, LOOK, ROAM, FETCH_FOOD, RESCUE, DABBLE, HELPER }
+enum State { NEST, FOLLOW, SLEEP, LOOK, ROAM, FETCH_FOOD, RESCUE, DABBLE, HELPER, CARRY_HOME }
 
 const GRAVITY := 18.0
 const NEST_WANDER := 0.9
@@ -81,8 +81,11 @@ func _apply_visuals() -> void:
 	if temperament != null:
 		s = temperament.scale_mult
 	growth.apply_visuals(model, s)
+	var tint: Color = growth.stage().color * (temperament.color_tint if temperament != null else Color.WHITE)
 	if _tint_mat != null:
-		_tint_mat.albedo_color = growth.stage().color * (temperament.color_tint if temperament != null else Color.WHITE)
+		_tint_mat.albedo_color = tint
+	# Stage colour doubles as the model tint: yellow fluff first, brown when fledged.
+	load("res://game/entities/model_loader.gd").apply_tint(model, tint)
 
 # --- Main loop -----------------------------------------------------------------
 
@@ -105,6 +108,7 @@ func _physics_process(delta: float) -> void:
 		State.SLEEP: planar = Vector3.ZERO
 		State.LOOK: planar = _do_look(delta, mother)
 		State.ROAM: planar = _do_roam(delta, mother)
+		State.CARRY_HOME: planar = _do_carry_home(delta)
 		State.FETCH_FOOD: planar = _do_fetch(delta, mother)
 		State.RESCUE: planar = _do_rescue(delta, mother)
 		State.DABBLE: planar = _do_dabble(delta)
@@ -196,11 +200,26 @@ func _do_roam(delta: float, mother: Node3D) -> Vector3:
 	if to.length() < 0.6 or _roam_timer <= 0.0:
 		if carried_keepsake == "" and _rng.randf() < 0.35:
 			carried_keepsake = ["bottle_cap", "marble", "button", "blue_glass", "pebble"][_rng.randi_range(0, 4)]
-		state = State.FOLLOW
+		# A find goes straight to the nest, carried proudly (5.7).
+		state = State.CARRY_HOME if carried_keepsake != "" else State.FOLLOW
 		return Vector3.ZERO
 	if global_position.distance_to(mother.global_position) > ROAM_RADIUS + 4.0:
 		state = State.FOLLOW
 	return to.normalized() * follow.speed * 0.7
+
+## Carry a keepsake to the nest and lay it in the ring. The nest keeps it forever.
+func _do_carry_home(_delta: float) -> Vector3:
+	if carried_keepsake == "":
+		state = State.FOLLOW
+		return Vector3.ZERO
+	var nest_pos: Vector3 = _park.nest.global_position
+	var to := Vector3(nest_pos.x - global_position.x, 0, nest_pos.z - global_position.z)
+	if to.length() < 1.3:
+		_park.nest.place_keepsake(carried_keepsake, display_name())
+		carried_keepsake = ""
+		state = State.FOLLOW
+		return Vector3.ZERO
+	return to.normalized() * follow.speed * 0.8
 
 func _do_fetch(delta: float, mother: Node3D) -> Vector3:
 	if _fetch_target == null or not is_instance_valid(_fetch_target) or not _fetch_target.active:
