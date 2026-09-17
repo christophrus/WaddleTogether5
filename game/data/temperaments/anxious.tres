@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Temperament" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/data/temperament.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "anxious"
+display_name = "der Ängstliche"
+color_tint = Color(0.92, 0.92, 1, 1)
+scale_mult = 0.9
+pitch = 1.3
+learn_mult = {
+"courage": 0.6,
+"dabbling": 0.8,
+"foraging": 1.4,
+"swimming": 0.4
+}
+follow_distance = 1.0
+roam_chance = 0.01
+name_suggestions = Array[String](["Mucki", "Flöckchen", "Timo", "Bibi"])

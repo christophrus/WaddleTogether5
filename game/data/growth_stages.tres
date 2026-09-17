@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="GrowthStages" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://game/data/growth_stage.gd" id="1"]
+[ext_resource type="Script" path="res://game/data/growth_stages.gd" id="2"]
+
+[sub_resource type="Resource" id="Stage0"]
+script = ExtResource("1")
+stage_name = "Küken"
+scale = 0.5
+color = Color(0.98, 0.88, 0.35, 1)
+feedings_to_grow = 3
+
+[sub_resource type="Resource" id="Stage1"]
+script = ExtResource("1")
+stage_name = "Jungvogel"
+scale = 0.7
+color = Color(0.9, 0.8, 0.45, 1)
+feedings_to_grow = 5
+
+[sub_resource type="Resource" id="Stage2"]
+script = ExtResource("1")
+stage_name = "Flügge"
+scale = 0.9
+color = Color(0.7, 0.58, 0.38, 1)
+feedings_to_grow = 999
+
+[resource]
+script = ExtResource("2")
+stages = Array[ExtResource("1")]([SubResource("Stage0"), SubResource("Stage1"), SubResource("Stage2")])

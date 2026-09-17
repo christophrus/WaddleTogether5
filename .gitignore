@@ -1,0 +1,8 @@
+# Godot 4 import cache
+.godot/
+# Export output / presets (keystore risk, see brief 11)
+export/
+export_presets.cfg
+# Test artefacts
+tools/test_out/
+*.tmp

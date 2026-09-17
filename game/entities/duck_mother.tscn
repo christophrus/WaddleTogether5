@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/entities/duck_mother.gd" id="1"]
+
+[sub_resource type="CapsuleShape3D" id="Capsule"]
+radius = 0.35
+height = 1.0
+
+[node name="DuckMother" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Capsule")
+
+[node name="Model" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CameraRig" type="Node3D" parent="."]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CameraRig"]
+spring_length = 7.0
+margin = 0.3
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig/SpringArm3D"]
+current = true
+fov = 60.0

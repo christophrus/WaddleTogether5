@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Temperament" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/data/temperament.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "clingy"
+display_name = "der Anhängliche"
+color_tint = Color(1, 0.95, 0.95, 1)
+scale_mult = 0.95
+pitch = 1.2
+learn_mult = {
+"courage": 0.5,
+"dabbling": 1.3,
+"foraging": 1.2,
+"swimming": 1.2
+}
+follow_distance = 0.8
+roam_chance = 0.005
+name_suggestions = Array[String](["Knuddel", "Pünktchen", "Emmi", "Schnute"])
