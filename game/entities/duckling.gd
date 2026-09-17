@@ -50,6 +50,8 @@ var _helper_teach_t := 0.0
 var _wander_t := 0.0
 var _wander_off := Vector3.ZERO
 var _tint_mat: StandardMaterial3D
+var _hop_t := 0.0
+var _answer_call_t := -1.0
 
 func _ready() -> void:
 	add_to_group("duckling")
@@ -127,6 +129,10 @@ func _physics_process(delta: float) -> void:
 		_step_assist(delta)
 	move_and_slide()
 	_update_warmth(delta, mother)
+	if _answer_call_t >= 0.0:
+		_answer_call_t -= delta
+		if _answer_call_t < 0.0:
+			AudioManager.peep(global_position, peep_pitch)
 	_animate(delta, planar)
 
 ## Same capsule-vs-step fix as the mother (8.B.1b): two bodies sharing a movement
@@ -351,6 +357,16 @@ func on_call(kind: String, mother: Node3D, point: Vector3, forced := false) -> v
 		if kind == "lullaby":
 			_fall_asleep()
 			lullaby_sleep = true
+			return
+		# Too small to follow, but not deaf: hatchlings answer with a peep (staggered so
+		# a clutch sounds like a chorus) and scurry to the nest rim nearest the mother.
+		_wake()
+		_answer_call_t = 0.15 + _rng.randf() * 0.5
+		var to: Vector3 = mother.global_position - _park.nest.global_position
+		to.y = 0.0
+		if to.length() > 0.01:
+			_wander_off = to.normalized() * NEST_WANDER
+			_wander_t = 4.0
 		return
 	match kind:
 		"gather":
@@ -380,14 +396,16 @@ func _wake() -> void:
 func get_interaction_prompt(duck: Node) -> String:
 	if bool(data["nest_bound"]):
 		return ""   # hatchlings are fed through the nest
-	if GameState.mother["carried_food"] > 0 and needs.is_hungry():
+	# Feeding is never gated by hunger (3.2): with food in the beak and a duckling that
+	# can still grow, the key feeds. Cuddling (and naming) happens with empty hands.
+	if GameState.mother["carried_food"] > 0 and (needs.is_hungry() or not growth.is_fledged()):
 		return "Füttern"
 	if carried_food:
 		return "Futter annehmen"
 	return "Kuscheln"
 
 func interact(duck: Node) -> void:
-	if GameState.mother["carried_food"] > 0 and needs.is_hungry():
+	if GameState.mother["carried_food"] > 0 and (needs.is_hungry() or not growth.is_fledged()):
 		GameState.mother["carried_food"] -= 1
 		receive_feeding()
 		return
@@ -401,7 +419,11 @@ func interact(duck: Node) -> void:
 func receive_feeding() -> void:
 	needs.feed()
 	growth.feed()
+	_apply_visuals()
+	# A bite is an event: a small hop and a peep, so feeding never feels like a no-op.
+	_hop_t = 0.4
 	AudioManager.play_sfx("feed")
+	AudioManager.peep(global_position, peep_pitch * 1.1)
 	EventBus.duckling_fed.emit(int(data["id"]))
 
 func cuddle() -> void:
@@ -474,6 +496,11 @@ func _animate(delta: float, planar: Vector3) -> void:
 	model.rotation_degrees.x = lerp(model.rotation_degrees.x, tilt, delta * 6.0)
 	var lying := state == State.SLEEP
 	model.rotation_degrees.z = lerp(model.rotation_degrees.z, 12.0 if lying else 0.0, delta * 4.0)
+	if _hop_t > 0.0:
+		_hop_t -= delta
+		model.position.y = -0.17 + sin(clampf(_hop_t / 0.4, 0.0, 1.0) * PI) * 0.12
+	else:
+		model.position.y = -0.17
 	if _animator != null:
 		var s := "idle"
 		if state == State.DABBLE: s = "dive"

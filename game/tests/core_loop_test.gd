@@ -71,7 +71,7 @@ func run(main: Node) -> void:
 			d.data["hunger"] = 0.0
 		d0.data["hunger"] = 1.0
 		await frames(2)
-		check_eq(m.current_prompt, "Küken füttern", "prompt offers feeding hungry hatchling (%d)" % i)
+		check(m.current_prompt.begins_with("Küken füttern"), "prompt offers feeding (%d)" % i, m.current_prompt)
 		m.interact()
 	check_eq(int(d0.data["stage"]), 1, "duckling grew to stage 1 after 3 feedings")
 	check(not bool(d0.data["nest_bound"]), "grown duckling left the nest")

@@ -43,6 +43,13 @@ func feed() -> bool:
 		return true
 	return false
 
+## Every feeding shows: the scale eases from this stage towards the next one with each
+## bite, so "I fed it" is visible long before the stage flips.
 func apply_visuals(model: Node3D, tint_mult: float = 1.0) -> void:
 	var s: Resource = stage()
-	model.scale = Vector3.ONE * s.scale * tint_mult
+	var scale: float = s.scale
+	if not is_fledged():
+		var next: Resource = stages_resource.stages[stage_index() + 1]
+		var t := clampf(float(data.get("feedings", 0)) / float(s.feedings_to_grow), 0.0, 1.0)
+		scale = lerpf(s.scale, next.scale, t * 0.8)
+	model.scale = Vector3.ONE * scale * tint_mult

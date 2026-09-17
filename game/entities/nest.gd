@@ -49,10 +49,23 @@ func is_near(pos: Vector3) -> bool:
 func hatchlings() -> Array:
 	return get_tree().get_nodes_in_group("duckling").filter(func(d): return bool(d.data["nest_bound"]))
 
-func _hungry_hatchling() -> Node:
+## Who gets the next bite: the hungriest hatchling, otherwise the one fed least. Never
+## null while there are hatchlings — hunger nudges the order, it does not gate feeding
+## (rule 3.2), otherwise a full brood makes the prompt vanish and nothing ever grows.
+func feed_target() -> Node:
 	var best: Node = null
 	for d in hatchlings():
-		if d.needs.is_hungry() and (best == null or d.needs.hunger() > best.needs.hunger()):
+		if best == null:
+			best = d
+			continue
+		var a_h: bool = d.needs.is_hungry()
+		var b_h: bool = best.needs.is_hungry()
+		if a_h != b_h:
+			if a_h:
+				best = d
+		elif int(d.data["feedings"]) < int(best.data["feedings"]):
+			best = d
+		elif int(d.data["feedings"]) == int(best.data["feedings"]) and d.needs.hunger() > best.needs.hunger():
 			best = d
 	return best
 
@@ -63,8 +76,11 @@ func get_interaction_prompt(duck: Node) -> String:
 		if GameState.mother["carried_material"] > 0:
 			return "Nistmaterial ablegen (%d/%d)" % [GameState.nest["material"], material_needed()]
 		return ""
-	if GameState.mother["carried_food"] > 0 and _hungry_hatchling() != null:
-		return "Küken füttern"
+	if GameState.mother["carried_food"] > 0:
+		var t := feed_target()
+		if t != null:
+			# Feedings-until-growth is an object counter, allowed in the UI (3.1).
+			return "Küken füttern (%d/%d)" % [int(t.data["feedings"]), t.growth.stage().feedings_to_grow]
 	if GameState.mother["carried_keepsake"] != "":
 		return "Fundstück ablegen"
 	if GameState.egg_slots_free() > 0:
@@ -78,7 +94,7 @@ func interact(duck: Node) -> void:
 			GameState.mother["carried_material"] = 0
 		return
 	if GameState.mother["carried_food"] > 0:
-		var h := _hungry_hatchling()
+		var h := feed_target()
 		if h != null:
 			GameState.mother["carried_food"] -= 1
 			h.receive_feeding()
