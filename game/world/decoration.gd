@@ -33,6 +33,7 @@ func build() -> void:
 	_scatter("rock", 24, 36.0)
 	_scatter_reeds(34)
 	_scatter_lilies(9)
+	_scatter_meadow_flowers(60)
 	_place_anchored("bench", Vector2(-4.0, 14.0))
 	_place_anchored("bench", Vector2(14.0, -4.0))
 	_build_horizon_ring()
@@ -117,6 +118,16 @@ func _scatter_reeds(count: int) -> void:
 			_spawn("reed", p)
 			break
 
+## The meadow east of the gate is where the dandelions grow (5.10 seed for later).
+func _scatter_meadow_flowers(count: int) -> void:
+	for i in count:
+		for attempt in 30:
+			var p := Vector2(_rng.randf_range(22.0, 38.0), _rng.randf_range(-20.0, 30.0))
+			if not is_free(p, 0.5):
+				continue
+			_spawn("flower", p)
+			break
+
 func _scatter_lilies(count: int) -> void:
 	for i in count:
 		var a := _rng.randf() * TAU
@@ -150,6 +161,7 @@ func _footprint(kind: String) -> float:
 		"rock": return 0.6
 		"bench": return 1.4
 		"reed": return 0.25
+		"flower": return 0.5
 	return 0.5
 
 # --- Builders ------------------------------------------------------------------
@@ -164,6 +176,7 @@ func _spawn(kind: String, p: Vector2) -> void:
 		"rock": root = _rock()
 		"bench": root = _bench()
 		"reed": root = _reed()
+		"flower": root = _flower()
 		"lily": root = _lily(); y = _park.WATER_SURFACE_Y + 0.09  # above the ripple amplitude
 		_: return
 	root.position = Vector3(p.x, y, p.y)
@@ -268,13 +281,39 @@ func _bush() -> Node3D:
 	return root
 
 func _rock() -> Node3D:
+	# A boulder sits half-buried but must still read as a lump, not a disc: keep the
+	# sphere nearly round and sink only a third of it.
 	var root := Node3D.new()
+	var r := _rng.randf_range(0.3, 0.6)
 	var sph := SphereMesh.new()
-	var r := _rng.randf_range(0.3, 0.7)
 	sph.radius = r
-	sph.height = r * 1.3
-	var mi := _mesh(root, sph, _plain_material(_jitter(Color(0.5, 0.5, 0.48), 0.01, 0.1)), Vector3(0, r * 0.3, 0))
-	mi.scale = Vector3(1.0, 0.7, _rng.randf_range(0.7, 1.3))
+	sph.height = r * 1.7
+	var mi := _mesh(root, sph, _plain_material(_jitter(Color(0.52, 0.51, 0.48), 0.01, 0.12)), Vector3(0, r * 0.45, 0))
+	mi.scale = Vector3(1.0, 0.85, _rng.randf_range(0.8, 1.3))
+	mi.rotation.y = _rng.randf() * TAU
+	if _rng.randf() < 0.5:
+		var small := SphereMesh.new()
+		small.radius = r * 0.45
+		small.height = r * 0.8
+		_mesh(root, small, _plain_material(_jitter(Color(0.5, 0.5, 0.47), 0.01, 0.12)), Vector3(r * 0.9, r * 0.2, r * 0.3))
+	return root
+
+func _flower() -> Node3D:
+	var root := Node3D.new()
+	var stalk_mat := _foliage_material(Color(0.25, 0.45, 0.15), Color(0.45, 0.65, 0.25), 0.2, 0.1)
+	var petal_col: Color = [Color(0.98, 0.85, 0.2), Color(0.98, 0.98, 0.95), Color(0.9, 0.55, 0.75)][_rng.randi_range(0, 2)]
+	for i in _rng.randi_range(3, 6):
+		var off := Vector3(_rng.randf_range(-0.35, 0.35), 0.0, _rng.randf_range(-0.35, 0.35))
+		var h := _rng.randf_range(0.25, 0.45)
+		var stalk := CylinderMesh.new()
+		stalk.top_radius = 0.012
+		stalk.bottom_radius = 0.018
+		stalk.height = h
+		_mesh(root, stalk, stalk_mat, off + Vector3(0, h / 2.0, 0))
+		var head := SphereMesh.new()
+		head.radius = 0.05
+		head.height = 0.08
+		_mesh(root, head, _plain_material(_jitter(petal_col, 0.02, 0.1)), off + Vector3(0, h + 0.03, 0))
 	return root
 
 func _bench() -> Node3D:

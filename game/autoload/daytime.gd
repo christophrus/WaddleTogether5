@@ -20,13 +20,23 @@ var _ambient_color := Gradient.new()
 
 func _ready() -> void:
 	_add_points(_sun_angle, [[0.0, -30.0], [0.25, 10.0], [0.5, 60.0], [0.78, 8.0], [1.0, -30.0]])
-	_add_points(_light_energy, [[0.0, 0.08], [0.22, 0.6], [0.5, 1.2], [0.78, 0.6], [0.86, 0.08], [1.0, 0.08]])
-	_set_gradient(_light_color, [[0.0, Color(0.35, 0.4, 0.7)], [0.22, Color(1.0, 0.75, 0.55)], [0.5, Color(1.0, 0.97, 0.9)], [0.78, Color(1.0, 0.6, 0.4)], [0.88, Color(0.35, 0.4, 0.7)], [1.0, Color(0.35, 0.4, 0.7)]])
+	# Night never goes fully dark: a cosy game needs a readable moonlit floor.
+	_add_points(_light_energy, [[0.0, 0.28], [0.22, 0.6], [0.5, 1.2], [0.78, 0.6], [0.86, 0.28], [1.0, 0.28]])
+	_set_gradient(_light_color, [[0.0, Color(0.55, 0.62, 0.9)], [0.22, Color(1.0, 0.75, 0.55)], [0.5, Color(1.0, 0.97, 0.9)], [0.78, Color(1.0, 0.6, 0.4)], [0.88, Color(0.55, 0.62, 0.9)], [1.0, Color(0.55, 0.62, 0.9)]])
 	_set_gradient(_sky_color, [[0.0, Color(0.06, 0.07, 0.16)], [0.22, Color(0.85, 0.6, 0.5)], [0.5, Color(0.55, 0.75, 0.95)], [0.78, Color(0.9, 0.5, 0.35)], [0.88, Color(0.06, 0.07, 0.16)], [1.0, Color(0.06, 0.07, 0.16)]])
-	_set_gradient(_ambient_color, [[0.0, Color(0.12, 0.14, 0.3)], [0.22, Color(0.6, 0.5, 0.5)], [0.5, Color(0.7, 0.8, 0.9)], [0.78, Color(0.6, 0.45, 0.4)], [0.88, Color(0.12, 0.14, 0.3)], [1.0, Color(0.12, 0.14, 0.3)]])
+	_set_gradient(_ambient_color, [[0.0, Color(0.26, 0.3, 0.5)], [0.22, Color(0.6, 0.5, 0.5)], [0.5, Color(0.7, 0.8, 0.9)], [0.78, Color(0.6, 0.45, 0.4)], [0.88, Color(0.26, 0.3, 0.5)], [1.0, Color(0.26, 0.3, 0.5)]])
 	_was_night = is_night()
 
 func _add_points(c: Curve, points: Array) -> void:
+	# Curve clamps samples to [min_value, max_value], which default to [0, 1]. Without
+	# widening them the sun angle (-30..60°) and energy (up to 1.2) get silently squashed.
+	var lo := INF
+	var hi := -INF
+	for p in points:
+		lo = minf(lo, p[1])
+		hi = maxf(hi, p[1])
+	c.min_value = lo
+	c.max_value = hi
 	for p in points:
 		c.add_point(Vector2(p[0], p[1]))
 
@@ -76,7 +86,11 @@ func apply_lighting() -> void:
 	var t := GameState.day_time
 	if _light != null and is_instance_valid(_light):
 		# rotation_degrees on purpose: hand-written basis matrices bit us once (8.A.1).
-		_light.rotation_degrees = Vector3(-_sun_angle.sample(t), -35.0 + 180.0 * t, 0.0)
+		# Below the horizon the same light stands in for the moon: keep it above 25° so
+		# the floor is lit from above instead of from underneath.
+		var elevation := _sun_angle.sample(t)
+		elevation = maxf(elevation, 25.0 if is_night() else 6.0)
+		_light.rotation_degrees = Vector3(-elevation, -35.0 + 180.0 * t, 0.0)
 		_light.light_color = _light_color.sample(t)
 		_light.light_energy = _light_energy.sample(t)
 	if _env != null:

@@ -43,6 +43,11 @@ func _ready() -> void:
 		"ground":
 			park.mother.spring_arm.spring_length = 3.5
 			park.mother.spring_arm.rotation_degrees.x = -55.0
+		"rock":
+			# A known rock from the deterministic scatter (see tools/dump_props.gd).
+			park.mother.teleport(Vector3(26.6, 0.6, -0.8))
+			park.mother.spring_arm.spring_length = 3.0
+			park.mother.spring_arm.rotation_degrees.x = -30.0
 		"meadow": park.mother.teleport(Vector3(17.0, 0.6, 2.0))
 		"forest": park.mother.teleport(Vector3(0.0, 0.6, -19.0))
 		"night":

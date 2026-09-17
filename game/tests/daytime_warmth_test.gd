@@ -26,7 +26,11 @@ func run(main: Node) -> void:
 	check_eq(dawns[0], 1, "dawn_broke emitted when the day wraps")
 	check_eq(GameState.day_index, day_before + 1, "day index advanced")
 	check(GameState.day_time < 0.1, "time wrapped around", GameState.day_time)
-	check(p.sun.light_energy < 0.2, "sun is dim right after midnight", p.sun.light_energy)
+	# Night is moonlit on purpose (readable floor), so "dim" means well below noon.
+	check(p.sun.light_energy < 0.4, "sun is dim right after midnight", p.sun.light_energy)
+	Daytime.set_time(0.5)
+	check(p.sun.light_energy > 1.0, "sun is bright at noon", p.sun.light_energy)
+	Daytime.set_time(0.9)
 
 	# Warmth: a follower stuck far away peeps at night; silent once the mother is near.
 	var brood := await bootstrap_brood(main, 1)
