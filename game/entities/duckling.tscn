@@ -7,8 +7,8 @@
 [ext_resource type="Script" path="res://game/entities/components/learning_component.gd" id="5"]
 
 [sub_resource type="CapsuleShape3D" id="Capsule"]
-radius = 0.18
-height = 0.5
+radius = 0.13
+height = 0.34
 
 [node name="Duckling" type="CharacterBody3D"]
 collision_layer = 8
@@ -19,7 +19,7 @@ script = ExtResource("1")
 shape = SubResource("Capsule")
 
 [node name="Model" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.17, 0)
 
 [node name="Needs" type="Node" parent="."]
 script = ExtResource("2")

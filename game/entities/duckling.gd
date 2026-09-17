@@ -67,7 +67,8 @@ func _ready() -> void:
 	_build_graybox()
 	var loader = load("res://game/entities/model_loader.gd").new()
 	add_child(loader)
-	_animator = loader.mount(model, "res://assets/models/duckling.glb", _graybox, 0.6, 0.0, temperament.color_tint if temperament != null else Color.WHITE)
+	# Same convention as the mother: the model already faces +Z.
+	_animator = loader.mount(model, "res://assets/models/duckling.glb", _graybox, 1.0, 0.0, temperament.color_tint if temperament != null else Color.WHITE)
 	_apply_visuals()
 	state = State.NEST if bool(data["nest_bound"]) else State.FOLLOW
 	if bool(data.get("is_helper", false)):
@@ -113,7 +114,7 @@ func _physics_process(delta: float) -> void:
 	velocity.x = planar.x
 	velocity.z = planar.z
 	if is_in_water:
-		var target_y: float = _park.WATER_SURFACE_Y + 0.08
+		var target_y: float = _park.WATER_SURFACE_Y + 0.14
 		if state == State.DABBLE:
 			target_y -= 0.2
 		velocity.y = (target_y - global_position.y) * 6.0 - velocity.y * 0.3
@@ -457,7 +458,7 @@ func _animate(delta: float, planar: Vector3) -> void:
 	if _animator != null:
 		var s := "idle"
 		if state == State.DABBLE: s = "dive"
-		elif state == State.SLEEP: s = "idle"
+		elif state == State.SLEEP: s = "sleep"
 		elif is_in_water: s = "swim"
 		elif flat > 0.05: s = "walk"
 		_animator.set_state(s)

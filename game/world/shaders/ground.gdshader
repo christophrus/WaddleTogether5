@@ -11,8 +11,15 @@ uniform float sand_height = -0.15;
 
 varying vec3 world_pos;
 
+// Integer hash: the classic fract(sin(...)*43758) loses precision at park-sized
+// world coordinates and breaks into axis-aligned tiles.
 float hash(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+	uvec2 q = uvec2(ivec2(floor(p)) + ivec2(4096)) * uvec2(1597334677u, 3812015801u);
+	uint n = (q.x ^ q.y) * 1597334677u;
+	n ^= n >> 16u;
+	n *= 2246822519u;
+	n ^= n >> 13u;
+	return float(n & 0x00FFFFFFu) / 16777215.0;
 }
 
 float value_noise(vec2 p) {
@@ -31,8 +38,11 @@ void vertex() {
 }
 
 void fragment() {
-	float n = value_noise(world_pos.xz * noise_scale) * 0.6 + value_noise(world_pos.xz * noise_scale * 3.1) * 0.4;
-	vec3 grass = mix(color_a, color_b, smoothstep(0.35, 0.65, n));
+	// Three octaves, blended linearly: a hard smoothstep on one octave read as tiles.
+	float n = value_noise(world_pos.xz * noise_scale) * 0.5
+	        + value_noise(world_pos.xz * noise_scale * 2.7 + 13.0) * 0.3
+	        + value_noise(world_pos.xz * noise_scale * 7.3 + 41.0) * 0.2;
+	vec3 grass = mix(color_a, color_b, clamp((n - 0.3) / 0.4, 0.0, 1.0));
 	// Sandy shore where the bowl dips below the waterline.
 	float sand = smoothstep(sand_height + 0.15, sand_height - 0.25, world_pos.y);
 	ALBEDO = mix(grass, color_sand, sand);

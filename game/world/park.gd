@@ -59,13 +59,24 @@ func is_water(pos: Vector3) -> bool:
 func _build_environment() -> void:
 	var we: WorldEnvironment = $WorldEnvironment
 	environment = Environment.new()
-	environment.background_mode = Environment.BG_COLOR
+	# Procedural sky: Daytime drives its colours, so the sky *is* the clock (5.6).
+	var sky := Sky.new()
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color(0.35, 0.6, 0.9)
+	sky_mat.sky_horizon_color = Color(0.7, 0.82, 0.95)
+	sky_mat.ground_bottom_color = Color(0.3, 0.45, 0.25)
+	sky_mat.ground_horizon_color = Color(0.7, 0.82, 0.95)
+	sky_mat.sun_angle_max = 20.0
+	sky_mat.sun_curve = 0.15
+	sky.sky_material = sky_mat
+	environment.sky = sky
+	environment.background_mode = Environment.BG_SKY
 	environment.background_color = Color(0.55, 0.75, 0.95)
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color(0.7, 0.8, 0.9)
 	environment.ambient_light_energy = 0.6
 	environment.fog_enabled = true
-	environment.fog_density = 0.004
+	environment.fog_density = 0.0012
 	environment.fog_light_color = Color(0.75, 0.85, 0.95)
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	we.environment = environment
@@ -102,6 +113,24 @@ func _build_terrain() -> void:
 	mi.material_override = mat
 	body.add_child(mi)
 
+	# Visual apron past the walls (four strips, so nothing covers the pond bowl), same
+	# shader, so the horizon is grass rather than void.
+	var reach := WORLD_HALF * 3.0
+	var strips := [
+		[Vector2(WORLD_HALF * 2.0 + reach * 2.0, reach), Vector3(0, 0, -WORLD_HALF - reach / 2.0)],
+		[Vector2(WORLD_HALF * 2.0 + reach * 2.0, reach), Vector3(0, 0, WORLD_HALF + reach / 2.0)],
+		[Vector2(reach, WORLD_HALF * 2.0), Vector3(-WORLD_HALF - reach / 2.0, 0, 0)],
+		[Vector2(reach, WORLD_HALF * 2.0), Vector3(WORLD_HALF + reach / 2.0, 0, 0)],
+	]
+	for s in strips:
+		var apron := MeshInstance3D.new()
+		var apron_mesh := PlaneMesh.new()
+		apron_mesh.size = s[0]
+		apron.mesh = apron_mesh
+		apron.material_override = mat
+		apron.position = s[1] + Vector3(0, -0.02, 0)
+		terrain.add_child(apron)
+
 	# Invisible walls at the world rim so nobody waddles into the void.
 	for side in [Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, -1)]:
 		var wall := StaticBody3D.new()
@@ -126,8 +155,10 @@ func _build_terrain_mesh(cells: int) -> ArrayMesh:
 			var p10 := Vector3(x0 + 1, ground_height(x0 + 1, z0), z0)
 			var p01 := Vector3(x0, ground_height(x0, z0 + 1), z0 + 1)
 			var p11 := Vector3(x0 + 1, ground_height(x0 + 1, z0 + 1), z0 + 1)
-			for tri in [[p00, p01, p10], [p10, p01, p11]]:
-				var n: Vector3 = (tri[1] - tri[0]).cross(tri[2] - tri[0]).normalized()
+			# Godot front faces are wound *clockwise*; CCW here renders the ground invisible
+			# from above (back-face culled). Normal is computed from the CCW edge order.
+			for tri in [[p00, p10, p01], [p10, p11, p01]]:
+				var n: Vector3 = (tri[2] - tri[0]).cross(tri[1] - tri[0]).normalized()
 				if n.y < 0.0:
 					n = -n
 				for v in tri:

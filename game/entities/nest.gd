@@ -165,7 +165,7 @@ func debug_hatch_all() -> void:
 # --- Keepsakes -----------------------------------------------------------------
 
 func place_keepsake(kind: String, finder: String) -> void:
-	var entry := {"kind": kind, "angle": _rng.randf() * TAU, "radius": _rng.randf_range(1.3, 2.0), "finder": finder}
+	var entry := {"kind": kind, "angle": _rng.randf() * TAU, "radius": _rng.randf_range(0.95, 1.4), "finder": finder}
 	GameState.keepsakes.append(entry)
 	_add_keepsake_visual(entry)
 	EventBus.keepsake_placed.emit(kind, finder)
@@ -205,10 +205,11 @@ func _add_keepsake_visual(k: Dictionary) -> void:
 # --- Visual --------------------------------------------------------------------
 
 func _build_visual() -> void:
+	# Sized to a 0.73 m duck: a real nest is about one duck across.
 	var base := CylinderMesh.new()
-	base.top_radius = 1.1
-	base.bottom_radius = 1.2
-	base.height = 0.12
+	base.top_radius = 0.7
+	base.bottom_radius = 0.78
+	base.height = 0.1
 	var b := MeshInstance3D.new()
 	b.mesh = base
 	var bm := StandardMaterial3D.new()
@@ -219,15 +220,15 @@ func _build_visual() -> void:
 	_visual.add_child(b)
 	for i in STAGES:
 		var ring := TorusMesh.new()
-		ring.inner_radius = 0.75 - i * 0.08
-		ring.outer_radius = 1.05 - i * 0.05
+		ring.inner_radius = 0.42 - i * 0.05
+		ring.outer_radius = 0.66 - i * 0.03
 		var mi := MeshInstance3D.new()
 		mi.mesh = ring
 		var m := StandardMaterial3D.new()
 		m.albedo_color = Color(0.72, 0.6, 0.35).darkened(i * 0.08)
 		m.roughness = 1.0
 		mi.material_override = m
-		mi.position.y = 0.16 + i * 0.16
+		mi.position.y = 0.12 + i * 0.1
 		mi.visible = false
 		_visual.add_child(mi)
 		_ring_meshes.append(mi)
@@ -241,16 +242,17 @@ func _add_egg_visual(id: int) -> void:
 	var idx := _egg_nodes.size()
 	var mi := MeshInstance3D.new()
 	var s := SphereMesh.new()
-	s.radius = 0.18
-	s.height = 0.44
+	s.radius = 0.09
+	s.height = 0.22
 	mi.mesh = s
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://game/entities/egg.gdshader")
 	mat.set_shader_parameter("progress", 0.0)
+	mat.set_shader_parameter("half_height", 0.11)
 	# Duplicate goes onto the *same* property the renderer reads (8.D.2).
 	mi.material_override = mat
 	var a := idx * TAU / 4.0
-	mi.position = Vector3(cos(a) * 0.35, 0.4, sin(a) * 0.35)
+	mi.position = Vector3(cos(a) * 0.18, 0.3, sin(a) * 0.18)
 	_eggs_root.add_child(mi)
 	_egg_nodes[id] = mi
 	_progress_mats[id] = mat

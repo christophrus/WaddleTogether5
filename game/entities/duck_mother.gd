@@ -7,8 +7,8 @@ const WALK_SPEED := 4.2
 const SWIM_SPEED := 2.6
 const GRAVITY := 18.0
 const INTERACT_RANGE := 2.3
-const FLOAT_OFFSET := 0.15        # body origin above the water line while floating
-const DABBLE_DEPTH := 0.45        # target depth below the surface, not a velocity (8.B.2)
+const FLOAT_OFFSET := 0.38        # body origin above the water line: a duck sits high, ~1/3 submerged
+const DABBLE_DEPTH := 0.12        # target depth below the surface, not a velocity (8.B.2); the tilt does the rest
 const DABBLE_SECONDS := 3.0
 const GATHER_RANGE := 11.0
 const LOOK_DISTANCE := 4.0
@@ -41,13 +41,15 @@ func _ready() -> void:
 	add_to_group("saveable")
 	_park = get_tree().get_first_node_in_group("park")
 	# rotation_degrees in code, never hand-written matrices (8.A.1).
-	spring_arm.position = Vector3(0, 1.2, 0)
-	spring_arm.rotation_degrees = Vector3(-24.0, 0.0, 0.0)
+	spring_arm.position = Vector3(0, 1.0, 0)
+	spring_arm.rotation_degrees = Vector3(-20.0, 0.0, 0.0)
+	spring_arm.spring_length = 5.0
 	spring_arm.add_excluded_object(get_rid())
 	camera_rig.rotation_degrees.y = 180.0  # camera behind a duck facing +Z
 	_build_graybox()
 	var loader = load("res://game/entities/model_loader.gd").new()
 	add_child(loader)
+	# The model already faces +Z (its wide X extent is the wingspan, not its length).
 	_animator = loader.mount(model, "res://assets/models/duck_mother.glb", _graybox, 1.0, 0.0)
 	InputRouter.interact_pressed.connect(_on_interact)
 	InputRouter.call_gesture.connect(_on_call_gesture)

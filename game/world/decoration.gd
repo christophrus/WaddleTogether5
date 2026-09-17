@@ -35,6 +35,24 @@ func build() -> void:
 	_scatter_lilies(9)
 	_place_anchored("bench", Vector2(-4.0, 14.0))
 	_place_anchored("bench", Vector2(14.0, -4.0))
+	_build_horizon_ring()
+
+## A belt of trees beyond the invisible walls so the world does not end in a hard
+## line against the sky. Decoration only: no collision, no keep-out, not in `placed`.
+func _build_horizon_ring() -> void:
+	var half: float = _park.WORLD_HALF
+	for i in 120:
+		var a := _rng.randf() * TAU
+		var r := _rng.randf_range(half + 3.0, half + 26.0)
+		var p := Vector2(cos(a) * r, sin(a) * r)
+		var root: Node3D = _tree_pine() if _rng.randf() < 0.4 else _tree_round()
+		for body in root.get_children():
+			if body is StaticBody3D:
+				body.queue_free()
+		root.position = Vector3(p.x, 0.0, p.y)
+		root.rotation.y = _rng.randf() * TAU
+		root.scale = Vector3.ONE * _rng.randf_range(1.1, 1.6)
+		add_child(root)
 
 # --- Keep-out ------------------------------------------------------------------
 
@@ -146,7 +164,7 @@ func _spawn(kind: String, p: Vector2) -> void:
 		"rock": root = _rock()
 		"bench": root = _bench()
 		"reed": root = _reed()
-		"lily": root = _lily(); y = _park.WATER_SURFACE_Y + 0.02
+		"lily": root = _lily(); y = _park.WATER_SURFACE_Y + 0.09  # above the ripple amplitude
 		_: return
 	root.position = Vector3(p.x, y, p.y)
 	root.rotation.y = _rng.randf() * TAU

@@ -1,17 +1,21 @@
 extends Node
 ## Maps clips to logical states by keyword, because models bring their own names
-## ("Duck_walk" vs. "walk"). Movement clips loop; one-shots do not. The dive clip is
-## a seamless full cycle where the duck spends most of the time upside down, so it is
-## looped natively instead of frozen with seek() — freezing killed the leg paddling (8.C.2).
+## ("Duck_walk" vs. "walk", "Duck_hunt" for the dabble). Keywords are tried in priority
+## order and, among clips matching the same keyword, the shortest name wins so
+## "Duck_idle" beats "Duck_idle_swim". Movement clips loop; one-shots do not. The dive
+## clip is a seamless full cycle where the duck spends most of the time upside down, so
+## it is looped natively instead of frozen with seek() — freezing killed the leg
+## paddling (8.C.2).
 
 const KEYWORDS := {
-	"idle": ["idle", "stand", "rest"],
-	"walk": ["walk", "run", "waddle", "move"],
-	"swim": ["swim", "float", "paddle"],
-	"dive": ["dive", "dabble", "eat", "bob", "feed"],
-	"fly": ["fly", "flap", "jump"],
+	"idle": ["stand_idle", "duck_idle", "idle", "stand", "rest"],
+	"walk": ["walk", "waddle", "run", "move"],
+	"swim": ["duck_swim", "swim"],
+	"dive": ["hunt", "dabble", "dive", "sit_wash", "wash", "eat", "feed"],
+	"sleep": ["sleep", "sit_idle", "rest"],
+	"fly": ["flapping", "fly", "flap", "jump"],
 }
-const LOOPING := ["idle", "walk", "swim", "dive"]
+const LOOPING := ["idle", "walk", "swim", "dive", "sleep"]
 
 var player: AnimationPlayer
 var clips: Dictionary = {}   # state -> clip name
@@ -19,15 +23,19 @@ var current_state := ""
 
 func setup(p: AnimationPlayer) -> void:
 	player = p
-	for clip in p.get_animation_list():
-		var lower := clip.to_lower()
-		for state in KEYWORDS:
-			if clips.has(state):
-				continue
-			for kw in KEYWORDS[state]:
-				if kw in lower:
-					clips[state] = clip
-					break
+	var names: Array = Array(p.get_animation_list())
+	for state in KEYWORDS:
+		for kw in KEYWORDS[state]:
+			var best := ""
+			for clip in names:
+				var lower: String = clip.to_lower()
+				# Match against the part after the last "|" so rig prefixes do not count.
+				var short := lower.get_slice("|", lower.get_slice_count("|") - 1)
+				if kw in short and (best == "" or short.length() < best.get_slice("|", best.get_slice_count("|") - 1).length()):
+					best = clip
+			if best != "":
+				clips[state] = best
+				break
 	for state in clips:
 		var anim := p.get_animation(clips[state])
 		if anim != null:

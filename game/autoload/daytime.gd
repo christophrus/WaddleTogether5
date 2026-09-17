@@ -80,6 +80,13 @@ func apply_lighting() -> void:
 		_light.light_color = _light_color.sample(t)
 		_light.light_energy = _light_energy.sample(t)
 	if _env != null:
-		_env.background_color = _sky_color.sample(t)
+		var sky := _sky_color.sample(t)
+		_env.background_color = sky
 		_env.ambient_light_color = _ambient_color.sample(t)
-		_env.fog_light_color = _sky_color.sample(t).lerp(Color.WHITE, 0.3)
+		_env.fog_light_color = sky.lerp(Color.WHITE, 0.3) if not is_night() else sky.darkened(0.2)
+		if _env.sky != null and _env.sky.sky_material is ProceduralSkyMaterial:
+			var m: ProceduralSkyMaterial = _env.sky.sky_material
+			m.sky_top_color = sky.darkened(0.25)
+			m.sky_horizon_color = sky.lerp(Color.WHITE, 0.35)
+			m.ground_horizon_color = sky.lerp(Color.WHITE, 0.35)
+			m.ground_bottom_color = sky.darkened(0.6)

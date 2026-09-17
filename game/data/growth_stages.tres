@@ -6,21 +6,21 @@
 [sub_resource type="Resource" id="Stage0"]
 script = ExtResource("1")
 stage_name = "Küken"
-scale = 0.5
+scale = 0.85
 color = Color(0.98, 0.88, 0.35, 1)
 feedings_to_grow = 3
 
 [sub_resource type="Resource" id="Stage1"]
 script = ExtResource("1")
 stage_name = "Jungvogel"
-scale = 0.7
+scale = 1.0
 color = Color(0.9, 0.8, 0.45, 1)
 feedings_to_grow = 5
 
 [sub_resource type="Resource" id="Stage2"]
 script = ExtResource("1")
 stage_name = "Flügge"
-scale = 0.9
+scale = 1.15
 color = Color(0.7, 0.58, 0.38, 1)
 feedings_to_grow = 999
 
