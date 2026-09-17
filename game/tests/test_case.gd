@@ -22,7 +22,7 @@ func check(cond: bool, label: String, actual = null) -> bool:
 		_failures.append(label)
 	return cond
 
-func check_eq(actual, expected, label: String) -> bool:
+func check_eq(actual, expected, label: String, _detail = null) -> bool:
 	return check(actual == expected, label, "%s, expected %s" % [str(actual), str(expected)])
 
 func check_near(actual: float, expected: float, tol: float, label: String) -> bool:

@@ -36,6 +36,10 @@ func _ready() -> void:
 	_build_wildlife()
 	_build_decoration()
 	_restore_ducklings()
+	var generations := Node.new()
+	generations.name = "Generations"
+	generations.set_script(load("res://game/world/generations.gd"))
+	add_child(generations)
 	Daytime.register_world(sun, environment)
 	Daytime.running = true
 

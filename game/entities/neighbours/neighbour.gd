@@ -54,11 +54,13 @@ func _physics_process(delta: float) -> void:
 	if not befriended:
 		var mother_speed := Vector2(m.velocity.x, m.velocity.z).length()
 		var calm: bool = mother_speed < calm_speed or m.is_dabbling
-		if dist < comfort + 4.0 and calm and dist > 0.5:
+		# The "notices you" radius is fixed; only the flee distance shrinks. Otherwise
+		# progress would stall exactly when the family is finally allowed closer.
+		if dist < start_comfort + 4.0 and calm and dist > 0.5:
 			comfort = maxf(friend_threshold - 0.01, comfort - calm_rate * delta)
 			if comfort < friend_threshold:
 				_befriend()
-		elif dist < comfort + 2.0 and not calm and _flee_cooldown <= 0.0:
+		elif dist < start_comfort + 2.0 and not calm and _flee_cooldown <= 0.0:
 			startle()
 		if not befriended and dist < comfort:
 			flee_step(delta, (global_position - m.global_position))

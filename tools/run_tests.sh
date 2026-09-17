@@ -28,7 +28,7 @@ printf "\n%-24s %-6s %s\n" "TEST" "CODE" "RESULT"
 printf "%-24s %-6s %s\n" "------------------------" "------" "------"
 for t in $TESTS; do
   log="tools/test_out/$t.log"
-  WADDLE_TEST="$t" "$GODOT" --headless --path . res://game/tests/test_runner.tscn > "$log" 2>&1
+  WADDLE_TEST="$t" timeout 180 "$GODOT" --headless --path . res://game/tests/test_runner.tscn > "$log" 2>&1
   code=$?
   result=$(grep -m1 "RESULT:" "$log" | sed 's/.*RESULT: //')
   [ -z "$result" ] && result="(no RESULT line - see $log)"

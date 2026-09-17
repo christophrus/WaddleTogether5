@@ -94,6 +94,9 @@ func _physics_process(delta: float) -> void:
 	var planar := Vector3.ZERO
 	_dabble_cooldown = maxf(0.0, _dabble_cooldown - delta)
 
+	# Growth flips the record; the state machine follows the record, not the other way round.
+	if state == State.NEST and not bool(data["nest_bound"]):
+		state = State.FOLLOW
 	_update_sleep(mother)
 	match state:
 		State.NEST: planar = _do_nest(delta)

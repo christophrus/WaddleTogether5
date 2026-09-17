@@ -17,10 +17,19 @@ func _ready() -> void:
 		get_tree().quit(2)
 		return
 	var script: GDScript = load(path)
-	if script == null:
+	if script == null or not script.can_instantiate():
 		print("[RUNNER] RESULT: FAIL - %s failed to load (parse error?)" % path)
 		get_tree().quit(2)
 		return
+	# Watchdog: a test that crashes mid-way must not hang the whole suite.
+	var watchdog := Timer.new()
+	watchdog.wait_time = 120.0
+	watchdog.one_shot = true
+	watchdog.timeout.connect(func():
+		print("[RUNNER] RESULT: FAIL - %s timed out after 120 s" % test_name)
+		get_tree().quit(3))
+	add_child(watchdog)
+	watchdog.start()
 	# Tests own the save file question: start from a clean state, real save untouched.
 	SaveManager.save_path = "user://test_savegame.json"
 	SaveManager.autosave_enabled = false
