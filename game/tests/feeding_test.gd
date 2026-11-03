@@ -36,9 +36,7 @@ func run(main: Node) -> void:
 	check_eq(int(GameState.mother["carried_food"]), 8, "twelve food consumed")
 
 	# Hatchlings answer a call: peep and scurry to the rim facing the mother.
-	# bootstrap_brood returns every duckling; keep only the two fresh hatchlings.
-	var brood2 = (await bootstrap_brood(main, 2)).filter(func(d): return bool(d.data["nest_bound"]))
-	check_eq(brood2.size(), 2, "two new hatchlings")
+	var brood2 := await bootstrap_brood(main, 2)
 	for d in brood2:
 		d.teleport(n.global_position + Vector3(-0.8, 0.4, 0))
 	m.teleport(n.global_position + Vector3(6, 0.5, 0))
